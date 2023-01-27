@@ -1,6 +1,6 @@
 import 'dart:convert' show utf8;
 import 'dart:io'
-    show File, HttpRequest, HttpServer, HttpStatus, InternetAddress, Platform;
+    show File, HttpRequest, HttpServer, HttpStatus, InternetAddress;
 import 'dart:typed_data' show Uint8List;
 
 import 'package:flutter/material.dart';
@@ -30,7 +30,21 @@ class _BabylonJSViewerState extends State<BabylonJSViewer> {
   @override
   void initState() {
     super.initState();
+
     _initProxy();
+
+    webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..addJavaScriptChannel('Print', onMessageReceived: (message) {
+        print(message.message);
+      })
+      ..setNavigationDelegate(NavigationDelegate(onPageStarted: (url) {
+        print('>>>> BabylonJS Viewer loading url... <$url>'); // DEBUG
+      }, onWebResourceError: (error) {
+        print('>>>> ModelViewer failed to load: $error'); // DEBUB
+      }))
+      ..loadRequest(
+          Uri.parse('http://${_proxy!.address.address}:${_proxy!.port}/'));
   }
 
   @override
@@ -43,33 +57,10 @@ class _BabylonJSViewerState extends State<BabylonJSViewer> {
   }
 
   @override
-  void didUpdateWidget(final BabylonJSViewer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // TODO
-  }
-
-  @override
   Widget build(final BuildContext context) {
     if (_proxy != null) {
-      return WebView(
-        javascriptMode: JavascriptMode.unrestricted,
-        javascriptChannels: Set.from([
-          JavascriptChannel(
-              name: 'Print',
-              onMessageReceived: (JavascriptMessage message) {
-                print(message.message);
-              })
-        ]),
-        initialUrl: 'http://${_proxy!.address.address}:${_proxy!.port}/',
-        onWebViewCreated: (controller) {
-          webViewController = controller;
-        },
-        onWebResourceError: (error) {
-          print('>>>> ModelViewer failed to load: ${error}'); // DEBUB
-        },
-        onPageStarted: (url) {
-          print('>>>> BabylonJS Viewer loading url... <$url>'); // DEBUG
-        },
+      return WebViewWidget(
+        controller: webViewController,
       );
     } else {
       return Center(
