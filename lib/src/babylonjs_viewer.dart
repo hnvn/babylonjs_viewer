@@ -31,8 +31,6 @@ class _BabylonJSViewerState extends State<BabylonJSViewer> {
   void initState() {
     super.initState();
 
-    _initProxy();
-
     webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..addJavaScriptChannel('Print', onMessageReceived: (message) {
@@ -42,9 +40,12 @@ class _BabylonJSViewerState extends State<BabylonJSViewer> {
         print('>>>> BabylonJS Viewer loading url... <$url>'); // DEBUG
       }, onWebResourceError: (error) {
         print('>>>> ModelViewer failed to load: $error'); // DEBUB
-      }))
-      ..loadRequest(
+      }));
+
+    _initProxy().then((value) {
+      webViewController.loadRequest(
           Uri.parse('http://${_proxy!.address.address}:${_proxy!.port}/'));
+    });
   }
 
   @override
